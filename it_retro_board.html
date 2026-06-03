@@ -1,0 +1,496 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); }
+
+  #app { padding: 1rem 0.5rem 3rem; max-width: 980px; margin: 0 auto; }
+
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 8px; }
+  .top-bar h1 { font-size: 18px; font-weight: 500; color: var(--color-text-primary); }
+  .phase-badge { font-size: 12px; padding: 4px 12px; border-radius: 999px; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-secondary); color: var(--color-text-secondary); }
+  .btn { cursor: pointer; font-size: 13px; padding: 6px 14px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); transition: background 0.15s; }
+  .btn:hover { background: var(--color-background-secondary); }
+  .btn-primary { background: #1D9E75; color: #fff; border-color: #1D9E75; }
+  .btn-primary:hover { background: #0F6E56; border-color: #0F6E56; }
+  .btn-danger { background: #E24B4A; color: #fff; border-color: #E24B4A; }
+  .btn-danger:hover { background: #A32D2D; }
+  .btn-sm { font-size: 12px; padding: 4px 10px; }
+
+  .phase-nav { display: flex; gap: 6px; margin-bottom: 1.5rem; }
+  .phase-step { flex: 1; text-align: center; font-size: 11px; padding: 6px 4px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); color: var(--color-text-secondary); background: var(--color-background-secondary); cursor: pointer; }
+  .phase-step.active { border-color: #1D9E75; color: #0F6E56; background: #E1F5EE; font-weight: 500; }
+  .phase-step.done { color: var(--color-text-secondary); background: var(--color-background-secondary); border-color: var(--color-border-tertiary); opacity: 0.6; }
+
+  /* SUBMIT PHASE */
+  .submit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .submit-col { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 14px; }
+  .submit-col h2 { font-size: 13px; font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .col-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .submit-col textarea { width: 100%; resize: none; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); font-size: 13px; font-family: var(--font-sans); padding: 8px 10px; height: 70px; }
+  .submit-col textarea:focus { outline: none; border-color: #1D9E75; }
+  .add-row { display: flex; gap: 6px; margin-top: 6px; }
+  .pending-note { font-size: 12px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 6px 10px; margin-top: 6px; color: var(--color-text-primary); border: 0.5px solid var(--color-border-tertiary); position: relative; }
+  .pending-note .rm { position: absolute; top: 4px; right: 6px; font-size: 14px; cursor: pointer; color: var(--color-text-secondary); background: none; border: none; line-height: 1; }
+  .pending-count { font-size: 11px; color: var(--color-text-secondary); margin-top: 8px; }
+  .submit-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1rem; }
+  .anon-note { font-size: 11px; color: var(--color-text-secondary); margin-top: 1rem; text-align: center; }
+
+  /* REVEAL / GROUP / VOTE PHASE */
+  .board-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .board-col { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 14px; min-height: 180px; }
+  .board-col h2 { font-size: 13px; font-weight: 500; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .sticky { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 8px 10px; margin-bottom: 8px; font-size: 12px; border: 0.5px solid var(--color-border-tertiary); cursor: grab; position: relative; }
+  .sticky.dragging { opacity: 0.4; }
+  .sticky.drag-over { border-top: 2px solid #1D9E75; }
+  .sticky-text { color: var(--color-text-primary); line-height: 1.5; }
+  .sticky-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+  .vote-btn { background: none; border: 0.5px solid var(--color-border-secondary); border-radius: 999px; cursor: pointer; font-size: 11px; padding: 2px 8px; color: var(--color-text-secondary); display: flex; align-items: center; gap: 4px; }
+  .vote-btn:hover { background: var(--color-background-secondary); }
+  .vote-btn.voted { background: #E1F5EE; border-color: #1D9E75; color: #0F6E56; }
+  .vote-count { font-weight: 500; }
+  .del-btn { background: none; border: none; cursor: pointer; font-size: 13px; color: var(--color-text-secondary); padding: 2px 4px; line-height: 1; }
+  .del-btn:hover { color: #E24B4A; }
+  .group-label { font-size: 11px; color: #1D9E75; margin-top: 4px; font-weight: 500; }
+
+  .board-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; align-items: center; }
+
+  /* ACTION ITEMS */
+  .action-section { margin-top: 1.5rem; }
+  .action-section h2 { font-size: 14px; font-weight: 500; margin-bottom: 10px; color: var(--color-text-primary); }
+  .action-row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .action-row input { font-size: 13px; padding: 6px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-primary); font-family: var(--font-sans); }
+  .action-row input:focus { outline: none; border-color: #1D9E75; }
+  .action-item { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 8px 12px; font-size: 13px; display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; margin-bottom: 6px; }
+  .action-item.done-item { opacity: 0.5; text-decoration: line-through; }
+  .action-meta { font-size: 11px; color: var(--color-text-secondary); }
+  .action-check { cursor: pointer; width: 16px; height: 16px; accent-color: #1D9E75; }
+
+  /* EXPORT */
+  .export-section { margin-top: 2rem; background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 16px; }
+  .export-section h2 { font-size: 14px; font-weight: 500; margin-bottom: 10px; }
+  .export-pre { font-family: var(--font-mono); font-size: 11px; white-space: pre-wrap; line-height: 1.6; color: var(--color-text-primary); background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 12px; max-height: 240px; overflow-y: auto; }
+
+  .cols-config { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+  .cols-config label { font-size: 12px; color: var(--color-text-secondary); }
+
+  .hidden { display: none !important; }
+  .voted-note { border-left: 3px solid #1D9E75; }
+  .top-voted { background: #E1F5EE !important; }
+
+  .toast { position: fixed; bottom: 1rem; right: 1rem; background: #1D9E75; color: #fff; font-size: 13px; padding: 8px 16px; border-radius: var(--border-radius-md); opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 999; }
+  .toast.show { opacity: 1; }
+</style>
+
+<div id="app">
+  <h2 class="sr-only">IT Team Retrospective Board — anonymous sticky notes, reveal, vote, and action items</h2>
+
+  <div class="top-bar">
+    <div>
+      <h1><i class="ti ti-layout-board" aria-hidden="true" style="margin-right:6px;font-size:18px;vertical-align:-2px;color:#1D9E75"></i>IT Retro Board</h1>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <span class="phase-badge" id="phase-label">Phase: submit</span>
+      <button class="btn btn-sm" onclick="resetBoard()"><i class="ti ti-refresh" aria-hidden="true"></i> New retro</button>
+    </div>
+  </div>
+
+  <div class="phase-nav">
+    <div class="phase-step active" id="step-submit" onclick="goPhase('submit')">1 · Submit</div>
+    <div class="phase-step" id="step-reveal" onclick="goPhase('reveal')">2 · Reveal</div>
+    <div class="phase-step" id="step-vote" onclick="goPhase('vote')">3 · Vote</div>
+    <div class="phase-step" id="step-actions" onclick="goPhase('actions')">4 · Actions</div>
+    <div class="phase-step" id="step-export" onclick="goPhase('export')">5 · Export</div>
+  </div>
+
+  <!-- PHASE 1: SUBMIT -->
+  <div id="phase-submit">
+    <div id="submit-grid" class="submit-grid"></div>
+    <p class="anon-note"><i class="ti ti-shield-lock" aria-hidden="true"></i> Notes are collected anonymously — no names attached</p>
+    <div class="submit-actions">
+      <button class="btn btn-primary" onclick="goPhase('reveal')">Reveal all notes <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+    </div>
+  </div>
+
+  <!-- PHASE 2: REVEAL -->
+  <div id="phase-reveal" class="hidden">
+    <div class="board-controls">
+      <span style="font-size:12px;color:var(--color-text-secondary);">Drag notes between columns to group them.</span>
+    </div>
+    <div id="board-reveal" class="board-cols"></div>
+    <div class="submit-actions">
+      <button class="btn btn-primary" onclick="goPhase('vote')">Start voting <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+    </div>
+  </div>
+
+  <!-- PHASE 3: VOTE -->
+  <div id="phase-vote" class="hidden">
+    <div class="board-controls">
+      <span style="font-size:12px;color:var(--color-text-secondary);">Each person gets <strong>5 votes</strong> — click a note to upvote. You can stack votes on one note.</span>
+      <span id="votes-left-badge" style="font-size:12px;font-weight:500;color:#0F6E56;background:#E1F5EE;padding:3px 10px;border-radius:999px;">5 votes left</span>
+    </div>
+    <div id="board-vote" class="board-cols"></div>
+    <div class="submit-actions">
+      <button class="btn btn-primary" onclick="goPhase('actions')">Create action items <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+    </div>
+  </div>
+
+  <!-- PHASE 4: ACTIONS -->
+  <div id="phase-actions" class="hidden">
+    <div id="top-voted-section" style="margin-bottom:1.5rem;"></div>
+    <div class="action-section">
+      <h2><i class="ti ti-checkbox" aria-hidden="true" style="margin-right:6px;vertical-align:-2px;color:#1D9E75"></i>Action items</h2>
+      <div class="action-row">
+        <input type="text" id="action-text" placeholder="Describe the action..." />
+        <input type="text" id="action-owner" placeholder="Owner" style="max-width:110px;" />
+        <input type="text" id="action-due" placeholder="Due date" style="max-width:100px;" />
+        <button class="btn btn-primary btn-sm" onclick="addAction()"><i class="ti ti-plus" aria-hidden="true"></i> Add</button>
+      </div>
+      <div id="action-list"></div>
+    </div>
+    <div class="submit-actions">
+      <button class="btn btn-primary" onclick="goPhase('export')">Export summary <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+    </div>
+  </div>
+
+  <!-- PHASE 5: EXPORT -->
+  <div id="phase-export" class="hidden">
+    <div class="export-section">
+      <h2><i class="ti ti-clipboard-text" aria-hidden="true" style="margin-right:6px;vertical-align:-2px;color:#1D9E75"></i>Retro summary</h2>
+      <pre class="export-pre" id="export-text"></pre>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn btn-primary btn-sm" onclick="copyExport()"><i class="ti ti-copy" aria-hidden="true"></i> Copy to clipboard</button>
+        <button class="btn btn-sm" onclick="goPhase('actions')"><i class="ti ti-arrow-left" aria-hidden="true"></i> Back</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const COLS = [
+  { id:'went-well', label:'Went well', color:'#1D9E75', dot:'#1D9E75' },
+  { id:'improve',   label:'To improve', color:'#E24B4A', dot:'#E24B4A' },
+  { id:'ideas',     label:'Ideas / try', color:'#BA7517', dot:'#BA7517' },
+  { id:'kudos',     label:'Kudos', color:'#185FA5', dot:'#185FA5' }
+];
+
+let state = {
+  phase: 'submit',
+  notes: {},
+  pending: {},
+  votes: {},
+  myVotes: {},
+  actions: []
+};
+
+const MAX_VOTES = 5;
+
+function load() {
+  try {
+    const raw = localStorage.getItem('retro_state_v2');
+    if (raw) Object.assign(state, JSON.parse(raw));
+  } catch(e) {}
+  COLS.forEach(c => {
+    if (!state.notes[c.id]) state.notes[c.id] = [];
+    if (!state.pending[c.id]) state.pending[c.id] = [];
+    if (!state.votes[c.id]) state.votes[c.id] = {};
+    if (!state.myVotes) state.myVotes = {};
+    if (!state.myVotes[c.id]) state.myVotes[c.id] = {};
+  });
+  if (!state.actions) state.actions = [];
+}
+
+function save() {
+  try { localStorage.setItem('retro_state_v2', JSON.stringify(state)); } catch(e) {}
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function goPhase(p) {
+  state.phase = p;
+  save();
+  ['submit','reveal','vote','actions','export'].forEach(ph => {
+    document.getElementById('phase-'+ph).classList.toggle('hidden', ph !== p);
+    const step = document.getElementById('step-'+ph);
+    step.classList.toggle('active', ph === p);
+  });
+  document.getElementById('phase-label').textContent = 'Phase: ' + p;
+  if (p === 'reveal') renderReveal();
+  if (p === 'vote') renderVote();
+  if (p === 'actions') renderActions();
+  if (p === 'export') renderExport();
+}
+
+function renderSubmit() {
+  const grid = document.getElementById('submit-grid');
+  grid.innerHTML = '';
+  COLS.forEach(col => {
+    const div = document.createElement('div');
+    div.className = 'submit-col';
+    const pending = state.pending[col.id] || [];
+    div.innerHTML = `
+      <h2><span class="col-dot" style="background:${col.dot}"></span>${col.label}</h2>
+      <textarea id="ta-${col.id}" placeholder="Add a note..."></textarea>
+      <div class="add-row">
+        <button class="btn btn-primary btn-sm" onclick="addPending('${col.id}')"><i class="ti ti-plus" aria-hidden="true"></i> Add</button>
+      </div>
+      <div id="pending-${col.id}">
+        ${pending.map((n,i) => `<div class="pending-note">${escHtml(n)}<button class="rm" onclick="removePending('${col.id}',${i})">×</button></div>`).join('')}
+      </div>
+      <p class="pending-count">${pending.length} note${pending.length!==1?'s':''} ready to submit</p>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function addPending(colId) {
+  const ta = document.getElementById('ta-'+colId);
+  const txt = ta.value.trim();
+  if (!txt) return;
+  if (!state.pending[colId]) state.pending[colId] = [];
+  state.pending[colId].push(txt);
+  ta.value = '';
+  save();
+  renderSubmit();
+  toast('Note added!');
+}
+
+function removePending(colId, idx) {
+  state.pending[colId].splice(idx, 1);
+  save();
+  renderSubmit();
+}
+
+function renderReveal() {
+  COLS.forEach(col => {
+    if (state.pending[col.id]) {
+      state.pending[col.id].forEach(txt => {
+        const id = 'n_' + Math.random().toString(36).slice(2,9);
+        state.notes[col.id].push({ id, text: txt });
+        if (!state.votes[col.id]) state.votes[col.id] = {};
+        state.votes[col.id][id] = 0;
+      });
+      state.pending[col.id] = [];
+    }
+  });
+  save();
+
+  const board = document.getElementById('board-reveal');
+  board.innerHTML = '';
+  COLS.forEach(col => {
+    const div = document.createElement('div');
+    div.className = 'board-col';
+    div.dataset.col = col.id;
+    div.innerHTML = `<h2><span class="col-dot" style="background:${col.dot}"></span>${col.label} <span style="font-size:11px;color:var(--color-text-secondary);">(${(state.notes[col.id]||[]).length})</span></h2>`;
+    (state.notes[col.id]||[]).forEach(note => {
+      div.appendChild(makeStickyReveal(note, col.id));
+    });
+    div.addEventListener('dragover', e => { e.preventDefault(); });
+    div.addEventListener('drop', e => { e.preventDefault(); handleDrop(e, col.id, 'reveal'); });
+    board.appendChild(div);
+  });
+}
+
+function makeStickyReveal(note, colId) {
+  const el = document.createElement('div');
+  el.className = 'sticky';
+  el.draggable = true;
+  el.dataset.id = note.id;
+  el.dataset.col = colId;
+  el.innerHTML = `<div class="sticky-text">${escHtml(note.text)}</div>
+    <div class="sticky-foot">
+      <span style="font-size:11px;color:var(--color-text-secondary);">drag to regroup</span>
+      <button class="del-btn" onclick="deleteNote('${note.id}','${colId}','reveal')" aria-label="Delete note"><i class="ti ti-trash" aria-hidden="true"></i></button>
+    </div>`;
+  el.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', JSON.stringify({id:note.id,from:colId})); el.classList.add('dragging'); });
+  el.addEventListener('dragend', () => el.classList.remove('dragging'));
+  return el;
+}
+
+function handleDrop(e, toCol, phase) {
+  const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+  if (data.from === toCol) return;
+  const fromNotes = state.notes[data.from];
+  const idx = fromNotes.findIndex(n => n.id === data.id);
+  if (idx === -1) return;
+  const [note] = fromNotes.splice(idx, 1);
+  state.notes[toCol].push(note);
+  if (!state.votes[toCol]) state.votes[toCol] = {};
+  if (!state.votes[toCol][note.id]) state.votes[toCol][note.id] = (state.votes[data.from]||{})[note.id] || 0;
+  delete (state.votes[data.from]||{})[note.id];
+  save();
+  if (phase === 'reveal') renderReveal();
+  else renderVote();
+}
+
+function deleteNote(id, colId, phase) {
+  state.notes[colId] = (state.notes[colId]||[]).filter(n => n.id !== id);
+  delete (state.votes[colId]||{})[id];
+  save();
+  if (phase === 'reveal') renderReveal();
+  else renderVote();
+}
+
+function renderVote() {
+  const board = document.getElementById('board-vote');
+  board.innerHTML = '';
+  updateVotesLeft();
+  COLS.forEach(col => {
+    const div = document.createElement('div');
+    div.className = 'board-col';
+    div.dataset.col = col.id;
+    div.innerHTML = `<h2><span class="col-dot" style="background:${col.dot}"></span>${col.label}</h2>`;
+    const sorted = [...(state.notes[col.id]||[])].sort((a,b) => ((state.votes[col.id]||{})[b.id]||0) - ((state.votes[col.id]||{})[a.id]||0));
+    sorted.forEach(note => div.appendChild(makeStickyVote(note, col.id)));
+    div.addEventListener('dragover', e => e.preventDefault());
+    div.addEventListener('drop', e => { e.preventDefault(); handleDrop(e, col.id, 'vote'); });
+    board.appendChild(div);
+  });
+}
+
+function totalMyVotes() {
+  let t = 0;
+  Object.values(state.myVotes||{}).forEach(obj => Object.values(obj).forEach(v => t += v));
+  return t;
+}
+function updateVotesLeft() {
+  const left = MAX_VOTES - totalMyVotes();
+  const el = document.getElementById('votes-left-badge');
+  if (el) el.textContent = left + ' vote' + (left!==1?'s':'') + ' left';
+}
+
+function makeStickyVote(note, colId) {
+  const el = document.createElement('div');
+  el.className = 'sticky';
+  el.draggable = true;
+  el.dataset.id = note.id;
+  const voteCount = (state.votes[colId]||{})[note.id] || 0;
+  const myV = (state.myVotes[colId]||{})[note.id] || 0;
+  if (voteCount > 0) el.classList.add('voted-note');
+  el.innerHTML = `<div class="sticky-text">${escHtml(note.text)}</div>
+    <div class="sticky-foot">
+      <button class="vote-btn ${myV>0?'voted':''}" onclick="vote('${note.id}','${colId}')"><i class="ti ti-arrow-up" aria-hidden="true" style="font-size:12px"></i><span class="vote-count">${voteCount}</span></button>
+      ${myV>0 ? `<button class="vote-btn" onclick="unvote('${note.id}','${colId}')" style="font-size:11px;">−1</button>` : ''}
+    </div>`;
+  el.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', JSON.stringify({id:note.id,from:colId})); el.classList.add('dragging'); });
+  el.addEventListener('dragend', () => el.classList.remove('dragging'));
+  return el;
+}
+
+function vote(id, colId) {
+  if (totalMyVotes() >= MAX_VOTES) { toast('No votes left!'); return; }
+  if (!state.votes[colId]) state.votes[colId] = {};
+  if (!state.myVotes[colId]) state.myVotes[colId] = {};
+  state.votes[colId][id] = (state.votes[colId][id]||0) + 1;
+  state.myVotes[colId][id] = (state.myVotes[colId][id]||0) + 1;
+  save(); renderVote();
+}
+
+function unvote(id, colId) {
+  if (!state.myVotes[colId] || !state.myVotes[colId][id]) return;
+  state.votes[colId][id] = Math.max(0, (state.votes[colId][id]||0) - 1);
+  state.myVotes[colId][id] = Math.max(0, (state.myVotes[colId][id]||0) - 1);
+  save(); renderVote();
+}
+
+function renderActions() {
+  const topSection = document.getElementById('top-voted-section');
+  topSection.innerHTML = '<h2 style="font-size:14px;font-weight:500;margin-bottom:10px;color:var(--color-text-primary);"><i class="ti ti-flame" aria-hidden="true" style="margin-right:6px;vertical-align:-2px;color:#E24B4A"></i>Top voted notes</h2>';
+  const all = [];
+  COLS.forEach(col => {
+    (state.notes[col.id]||[]).forEach(n => {
+      all.push({ note: n, col, votes: (state.votes[col.id]||{})[n.id]||0 });
+    });
+  });
+  all.sort((a,b) => b.votes - a.votes);
+  const top = all.slice(0, 5).filter(x => x.votes > 0);
+  if (top.length === 0) {
+    topSection.innerHTML += '<p style="font-size:13px;color:var(--color-text-secondary);">No votes cast yet.</p>';
+  } else {
+    top.forEach(({note, col, votes}) => {
+      const d = document.createElement('div');
+      d.style.cssText = 'display:flex;align-items:center;gap:10px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 12px;margin-bottom:6px;border:0.5px solid var(--color-border-tertiary);';
+      d.innerHTML = `<span style="font-size:13px;font-weight:500;color:#0F6E56;min-width:28px;">▲${votes}</span><span style="font-size:13px;color:var(--color-text-primary);flex:1;">${escHtml(note.text)}</span><span style="font-size:11px;color:${col.dot};background:var(--color-background-primary);border-radius:999px;padding:2px 8px;border:0.5px solid var(--color-border-tertiary);">${col.label}</span>`;
+      topSection.appendChild(d);
+    });
+  }
+
+  const list = document.getElementById('action-list');
+  list.innerHTML = '';
+  (state.actions||[]).forEach((a,i) => {
+    const d = document.createElement('div');
+    d.className = 'action-item' + (a.done ? ' done-item' : '');
+    d.innerHTML = `<span>${escHtml(a.text)}<span class="action-meta"> — ${escHtml(a.owner||'?')}${a.due?' · '+escHtml(a.due):''}</span></span>
+      <input type="checkbox" class="action-check" ${a.done?'checked':''} onchange="toggleAction(${i})" aria-label="Mark done">
+      <button class="del-btn" onclick="deleteAction(${i})" aria-label="Delete"><i class="ti ti-trash" aria-hidden="true"></i></button>`;
+    list.appendChild(d);
+  });
+}
+
+function addAction() {
+  const txt = document.getElementById('action-text').value.trim();
+  if (!txt) return;
+  const owner = document.getElementById('action-owner').value.trim();
+  const due = document.getElementById('action-due').value.trim();
+  state.actions.push({ text: txt, owner, due, done: false });
+  document.getElementById('action-text').value = '';
+  document.getElementById('action-owner').value = '';
+  document.getElementById('action-due').value = '';
+  save(); renderActions();
+  toast('Action item added!');
+}
+
+function toggleAction(i) { state.actions[i].done = !state.actions[i].done; save(); renderActions(); }
+function deleteAction(i) { state.actions.splice(i,1); save(); renderActions(); }
+
+function renderExport() {
+  const lines = ['RETROSPECTIVE SUMMARY', '='.repeat(40), ''];
+  const date = new Date().toLocaleDateString('en-GB', {year:'numeric',month:'long',day:'numeric'});
+  lines.push('Date: ' + date, '');
+  COLS.forEach(col => {
+    const notes = state.notes[col.id]||[];
+    if (!notes.length) return;
+    lines.push(col.label.toUpperCase(), '-'.repeat(30));
+    const sorted = [...notes].sort((a,b) => ((state.votes[col.id]||{})[b.id]||0) - ((state.votes[col.id]||{})[a.id]||0));
+    sorted.forEach(n => {
+      const v = (state.votes[col.id]||{})[n.id]||0;
+      lines.push(`  [▲${v}] ${n.text}`);
+    });
+    lines.push('');
+  });
+  lines.push('ACTION ITEMS', '-'.repeat(30));
+  if ((state.actions||[]).length === 0) lines.push('  (none)');
+  state.actions.forEach(a => {
+    lines.push(`  [${a.done?'✓':' '}] ${a.text} — ${a.owner||'?'}${a.due?' · '+a.due:''}`);
+  });
+  document.getElementById('export-text').textContent = lines.join('\n');
+}
+
+function copyExport() {
+  const txt = document.getElementById('export-text').textContent;
+  navigator.clipboard.writeText(txt).then(() => toast('Copied!')).catch(() => toast('Select text and copy manually'));
+}
+
+function resetBoard() {
+  if (!confirm('Start a new retro? This will clear all notes, votes, and actions.')) return;
+  state = { phase:'submit', notes:{}, pending:{}, votes:{}, myVotes:{}, actions:[] };
+  COLS.forEach(c => { state.notes[c.id]=[]; state.pending[c.id]=[]; state.votes[c.id]={}; state.myVotes[c.id]={}; });
+  save();
+  goPhase('submit');
+  renderSubmit();
+  toast('Board cleared!');
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+load();
+renderSubmit();
+goPhase(state.phase||'submit');
+</script>
